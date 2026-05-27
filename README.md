@@ -25,7 +25,7 @@ Learn by project step by step.
 
 ## Project List
 
-01_led_on
-02_led_beat
-03_systick_timer(coming soon)
-04_exti_interrupt(coming soon)
+- 01_led_on
+- 02_led_beat
+- 03_systick_timer(coming soon)
+- 04_exti_interrupt(coming soon)
