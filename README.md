@@ -1,13 +1,15 @@
 # STM32 Learning Journey
 
-This repository documents  my embedded systems learning journey using STM32F103C8T6 on Linux Mint XFCE.
+This repository records my STM32 bare-metal learning journey. 
+Learn by project step by step.
+
 
 ## Goals
 
-- Learn embedded systems engineering
-- Build firmware projects with STM32
-- Understand communication protocols and RTOS
-- Develop engineering workflow using Git and Linux
+- Understand Cortex-M3 system behavior
+- Lean register-level programming
+- Build embedded systems from scratch
+- Explore RTOS and MCU architecture
 
 ## Hardware
 
@@ -15,14 +17,15 @@ This repository documents  my embedded systems learning journey using STM32F103C
 - ThinkPad X230i
 - Linux Mint XFCE
 
+## Tools
+- arm-none-eabi-gcc
+- OpenOCD
+- ST-Link
+
+
 ## Project List
 
-|   Project    | Topics |
-|--------------|--------|
-| 01_led_blink |  GPIO  |
-
-## Development Environment
-
-- GCC ARM Toolchain
-- Git
-- Linux
+01_led_on 
+02_led_beat
+03_systick_timer(coming soon)
+04_exti_interrupt(coming soon)
