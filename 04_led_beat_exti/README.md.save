@@ -1,0 +1,95 @@
+# 04 - LED on and change the status by EXTI
+
+## Overview
+I let CPU execute the Led on -- delay -- led off --delay loop to do LED blink. It works but CPU are busy on this loop. It wastes CPU's ability. 
+
+Another way to make LED blink is in the hardware level. I use System clock.
+
+The goal is to understand how to interrup the programming.  including:
+- SysTick_Handler
+- Configure the SysTick
+- Vector table
+
+---
+
+## Hardware
+- MCU: STM32F103C8T6
+- LED: On-board LED (PC13)
+- Programmer: ST-Link V2
+
+---
+
+## Problems I Encountered
+
+### 1. Grammar and logic error
+
+- SysTick-Hander:  i write it Systick-handler   The name is fixed so CPU cannot find wrong name.
+- SysTick_Hander need to reture void not the int. It is special
+- SysTick only has 24 bit. But i set Systick_RVR 7200000. It beyond 24 bit.
+
+### 2. LED kept on but not blink at first 
+Problem define:
+- add a programming to turn off the led in the SysTick_handler. 
+- Make flash and LED don't turn off.
+- It means don't enter the interrup.
+  
+Root cause:
+- Don't clare the SysTick_hander
+
+Fix:
+- Add clare  in the Startup.s
+
+### 3. LED kept on but not blink again 
+  
+Root cause:
+- SysTick_hander is not in the right position of Vector table in startup.s 
+
+Fix:
+- Put SysTick_hander in vector[15]
+- Check linker.ld makefile and main.c again.
+
+### 4. LED kept on but not blink again 
+
+interesting things is:
+
+I need to have a rest so I plug the st_link. When I come back and insert the stlink again. LED start blink. 
+
+root cause:
+- Hardware was written fault startup data. It doesn't work when i change the programming. 
+
+Fix:
+Remove and insert to reset the data.
+
+
+---
+
+## What I Learned
+
+### 1. Register-Level Programming
+- Learned how to configure the systick.
+
+### 2. Debug
+- How to define the problems.
+- Test the root cause by C programming level.
+- Restart may be a good way.
+
+### 3. Understanding how to make flash
+
+- Start to understand Startup.s  Makefile and Linker.ld
+- What happened when I make flash
+
+
+---
+
+### 4. System Thinking
+- Built systick interrup data flow:
+  - Set a alarm in the hardware --- time out --- send 1 to interrup vector ---Start the SysTick_hander --- Come back the main.c
+  - Interrup Service don't mean CPU check all the time. It is from a interrup signal.
+
+
+
+---
+
+## Next Step
+- Interrupt system (NVIC + EXTI)
+- Event-driven LED control
