@@ -1,95 +1,164 @@
-# 03 - LED blink by Systick
+# 04 - External Interrupt (EXTI) LED control (Bare Metal STM32F103)
 
 ## Overview
-I let CPU execute the Led on -- delay -- led off --delay loop to do LED blink. It works but CPU are busy on this loop. It wastes CPU's ability. 
 
-Another way to make LED blink is in the hardware level. I use System clock.
+This project demonstrates how to use the Cortex-M3 external interrupt (EXTI) to generate interrupts and control an onboard LED (PC13) on STM32F103C8T6.
 
-The goal is to understand how to interrup the programming.  including:
-- SysTick_Handler
-- Configure the SysTick
-- Vector table
+Key concepts explored:
+
+- EXTI (External Interrupt/Event Controller)
+- NVIC (Nested Vectored Interrupt Controller)
+- Interrupt-driven programming (ISR)
+- Vector table configuration
+- Bare-metal register programming
+- Startup code and linker behavior
 
 ---
 
 ## Hardware
-- MCU: STM32F103C8T6
+
+- MCU: STM32F103C8T6 (Blue Pill)
 - LED: On-board LED (PC13)
 - Programmer: ST-Link V2
 
 ---
 
-## Problems I Encountered
+## Problem Summary & Debug Process
 
-### 1. Grammar and logic error
+### 1. Missing Pull-up Configuration
 
-- SysTick-Hander:  i write it Systick-handler   The name is fixed so CPU cannot find wrong name.
-- SysTick_Hander need to reture void not the int. It is special
-- SysTick only has 24 bit. But i set Systick_RVR 7200000. It beyond 24 bit.
+symptom:
+- EXTI interrupt was not triggered reliably.
 
-### 2. LED kept on but not blink at first 
-Problem define:
-- add a programming to turn off the led in the SysTick_handler. 
-- Make flash and LED don't turn off.
-- It means don't enter the interrup.
-  
+Root Cause:
+- PA0 was configured as an input but the internal pull-up resister was not enabled. 
+- The input pin remained floating, causing unstable behavior.
+
+✔ Fix:
+- Configure PA0 as input pull-up mode. 
+- Enable the external pull-up resistor through GPIOA_ODR. 
+- Configure EXTI to trigger on the falling edge using EXTI_FTSR
+
+---
+
+### 2. Missing NVIC configuration
+
+Symptom:
+
+- EXTI pending flag was set,but the CPU never entered the interrupt handler.
+
 Root cause:
-- Don't clare the SysTick_hander
 
-Fix:
-- Add clare  in the Startup.s
+- EXTI line was configured correctly, but the interrupt was not enabled in NVIC.  
 
-### 3. LED kept on but not blink again 
-  
+✔ Fix:
+- Read the Cortex-M3 and STM32 reference manuals. 
+- Enable EXTI0 interrup through NVIC_ISER)
+- Use IRQ number 6(EXTI0_IRQHandler)
+
+
+### 3. Interrupt Flag not clear. 
+
+Symptom:
+
+- Interrupt behavior became unstable after the first trigger. 
+
 Root cause:
-- SysTick_hander is not in the right position of Vector table in startup.s 
 
-Fix:
-- Put SysTick_hander in vector[15]
-- Check linker.ld makefile and main.c again.
+- EXTI pending flag remained set after the interrupt.
 
-### 4. LED kept on but not blink again 
+✔ Fix:
+- Clear the pending flag by writing to EXTI_PR inside the ISR. 
 
-interesting things is:
+---
 
-I need to have a rest so I plug the st_link. When I come back and insert the stlink again. LED start blink. 
+### 4. Interrupt Handler not executing.
 
-root cause:
-- Hardware was written fault startup data. It doesn't work when i change the programming. 
+Sympthon:
+- LED on and never changed state after triggering PA0. 
 
-Fix:
-Remove and insert to reset the data.
+Root cause:
+- Incorrct Vector table configuration
+- Interrupt handler was placed at the wrong vector position.
 
+✔ Fix:
+- Verified vector table layout. 
+- Ensure EXTI0_IRQHandler is located at the correct vector index. 
+
+---
+
+### 4. LED unexpectedly turn off after flashing.
+
+Sympthon:
+- LED off after programming the MCU.
+- NOK after disconnecting the ST-link and insert back.
+
+
+Root cause:
+- Previous faulty startup code or vector table configuration left the MCU  in an unexpected state. 
+
+✔ Fix:
+- Reflash a known-good project. 
+- Reflash the EXTI project. 
+- Perform a full hardware reset if necessary. 
 
 ---
 
 ## What I Learned
 
-### 1. Register-Level Programming
-- Learned how to configure the systick.
-
-### 2. Debug
-- How to define the problems.
-- Test the root cause by C programming level.
-- Restart may be a good way.
-
-### 3. Understanding how to make flash
-
-- Start to understand Startup.s  Makefile and Linker.ld
-- What happened when I make flash
-
+### 1. Register-level programming
+- Configured AFIO,EXTI,NVIC directly through registers
+- Built a deeper understanding of how hardware interrputs work. 
 
 ---
 
-### 4. System Thinking
-- Built systick interrup data flow:
-  - Set a alarm in the hardware --- time out --- send 1 to interrup vector ---Start the SysTick_hander --- Come back the main.c
-  - Interrup Service don't mean CPU check all the time. It is from a interrup signal.
+### 2. Interrupt system fundamentals
+- External signal can generate hadware interrups.
+- NVIC manages interrupt requests and priorities. 
+- CPU automatically enters the ISR through the vector table. 
+- After ISR execution, CPU returns to the interrupted code. 
+- Execution returns to main loop after ISR
 
+---
 
+### 3. Toolchain understanding
+- Startup.s defines vector table and reset behavior
+- Linker.ld determines memory layout. 
+- Correct startup configuration is essential for interrupt execution. 
+
+---
+
+### 4. System-level thinking
+- Interrupts are hardware-driven events, not software polling
+- CPU is event-driven, not loop-driven
+- Interrupts provide an efficient mechanism for communication between external hardware and software. 
+
+---
+
+## EXTI Execution Flow
+- PA0 input signal. 
+- ↓
+- AFIO maps PA0 to EXTI0
+- ↓
+- EXTI detects falling edge. 
+- ↓
+- EXTI sets pending flag. 
+-  ↓
+- NVIC recieve the interrupts request. 
+- ↓
+- CPU enters EXTI0_IRQHandler
+- ↓
+- Trigger LED state
+- ↓
+- Clear EXTI pending flag. 
+-  ↓
+- Return to main loop
 
 ---
 
 ## Next Step
-- Interrupt system (NVIC + EXTI)
-- Event-driven LED control
+
+
+- Button debounce using SysTick
+- Combining EXTI and timer interrupts
+- Event-driven embedded software design

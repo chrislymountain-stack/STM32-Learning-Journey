@@ -36,7 +36,7 @@ void EXTI0_Init(void){
 
   AFIO_EXTICR1 &=AFIO_EXITCR1_EXTIA0_POS; //AFIO connect IOPA---EXTI0        
   EXTI_IMR |=EXTI_IMR_LINE_POS;           //EXTI interrup line set
-  EXTI_FTSR |=EXTI_FTSR_POS;              // Rise trigger
+  EXTI_FTSR |=EXTI_FTSR_POS;              // Fall trigger
 
   NVIC_ISER0 |= (1<<6);                   //Inform NVIC and the position of exti0 is 6.
  
